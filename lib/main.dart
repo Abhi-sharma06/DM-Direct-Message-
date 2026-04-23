@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+
 import 'screens/whatsapp.dart';
 import 'screens/email.dart';
 
@@ -14,12 +18,63 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
     const WhatsappScreen(),
     const GmailScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+
+    Future.delayed(Duration.zero, () {
+      checkForUpdate(context);
+    });
+  }
+
+
+  Future<void> checkForUpdate(BuildContext context) async {
+    final response = await http.get(
+      Uri.parse("https://Abhi-sharma06.github.io/DM-Direct-Message-/version.json"),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+
+      int latestVersionCode = data['versionCode'];
+      String apkUrl = data['apk_url'];
+
+      int currentVersionCode = 2;
+
+      if (latestVersionCode > currentVersionCode) {
+        _showUpdateDialog(context, apkUrl);
+      }
+    }
+  }
+
+
+  void _showUpdateDialog(BuildContext context, String apkUrl) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Update Available 🚀"),
+        content: const Text("New version available. Please update."),
+        actions: [
+          TextButton(
+            onPressed: () {
+              launchUrl(Uri.parse(apkUrl));
+            },
+            child: const Text("Update"),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _onTap(int index) {
     setState(() {
@@ -40,7 +95,6 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         body: _screens[_selectedIndex],
 
-        // ✅ MODERN BOTTOM NAV
         bottomNavigationBar: Container(
           margin: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -66,8 +120,8 @@ class _MyAppState extends State<MyApp> {
               type: BottomNavigationBarType.fixed,
 
               selectedItemColor: _selectedIndex == 0
-                  ? const Color(0xFF128C7E) // WhatsApp Green
-                  : const Color(0xFFEA4335), // Gmail Red
+                  ? const Color(0xFF128C7E)
+                  : const Color(0xFFEA4335),
 
               unselectedItemColor: Colors.grey,
 
